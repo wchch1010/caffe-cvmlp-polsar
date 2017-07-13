@@ -2,7 +2,7 @@
 
 **This is a modified version of [Caffe](https://github.com/BVLC/caffe) used to achive goals set for master thesis work <!--[architecture](link)** -->
 
-# Task of this thesis is to implement and investigate the Complex-Valued Convolutional Multi-layer Perception(CV-MLP) in order to solve classiffcation problem of PolSAR Images.
+## Task of this thesis is to implement and investigate the Complex-Valued Convolutional Multi-layer Perception(CV-MLP) in order to solve classiffcation problem of PolSAR Images.
 In other words given PolSAR image pixels that are represented as complex-valued scattering
 vector our task is to automatically label regions on PolSAR image, for example: vegetation,
 buildings, roads and more by mapping each image pixel to land type.
