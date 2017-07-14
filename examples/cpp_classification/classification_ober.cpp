@@ -13,7 +13,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "caffe/PolsarDataTools.hpp"
 #include "caffe/util/image_cropping_utils.hpp"
 
 #ifdef USE_OPENCV
@@ -283,50 +282,50 @@ split(const T & str, const T & delimiters) {
 
 //"C:/Users/Galya/Desktop/Master/Code/caffe-windows/examples/Oberpfaffenhofen/data/labels_list.txt"
 
-std::vector<std::string> getLabelsPathes(std::string path) {
-	std::vector<std::string> labelsPath;
-	std::ifstream infile(path);
-	std::string line;
-	while (std::getline(infile, line)) {
-		labelsPath.push_back(line);
-	}
+//std::vector<std::string> getLabelsPathes(std::string path) {
+//	std::vector<std::string> labelsPath;
+//	std::ifstream infile(path);
+//	std::string line;
+//	while (std::getline(infile, line)) {
+//		labelsPath.push_back(line);
+//	}
+//
+//	return labelsPath;
+//}
 
-	return labelsPath;
-}
 
-
-cv::Mat getLableMat(std::string path) {
-
-	std::vector<std::string> labelsPath = getLabelsPathes(path);
-
-	cv::Mat labelBinary;
-	cv::Mat lableInt;
-
-	cv::Mat outPut = cv::Mat::zeros(cv::imread(labelsPath.at(0)).size(), CV_8UC1);
-
-	std::cout << "-------------------" << std::endl << " Creat label MAT: " << path << std::endl << "-------------------" << std::endl;
-
-	for (int i = 0; i < labelsPath.size(); i++) {
-
-		labelBinary = cv::imread(labelsPath.at(i));
-		cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
-		//std::cout << "lableInt " << labelBinary.size() << std::endl << labelBinary << std::endl;
-
-		cv::threshold(labelBinary, lableInt, 0, i + 1, CV_THRESH_BINARY);
-		//std::cout << labelsPath.at(i) << "  :  " << i << std::endl << lableInt << std::endl;
-		outPut = outPut + lableInt;
-		//std::cout << "outPut size " << outPut.size() << std::endl;
-		//std::cout << " ------- " << i << " ------- " <<std::endl;
-		//std::cout << (int)outPut.at<uchar>(100, 803) << std::endl;
-		//std::cout << (int)outPut.at<uchar>(6473, 1361) << std::endl;
-		//std::cout << (int)outPut.at<uchar>(21, 152) << std::endl;
-		//std::cout << (int)outPut.at<uchar>(6257, 737) << std::endl;
-		//std::cout << (int)outPut.at<uchar>(95, 777) << std::endl;
-		//std::cout << " ------------------------ " << std::endl;
-	}
-	
-	return outPut;
-}
+//cv::Mat getLableMat(std::string path) {
+//
+//	std::vector<std::string> labelsPath = getLabelsPathes(path);
+//
+//	cv::Mat labelBinary;
+//	cv::Mat lableInt;
+//
+//	cv::Mat outPut = cv::Mat::zeros(cv::imread(labelsPath.at(0)).size(), CV_8UC1);
+//
+//	std::cout << "-------------------" << std::endl << " Creat label MAT: " << path << std::endl << "-------------------" << std::endl;
+//
+//	for (int i = 0; i < labelsPath.size(); i++) {
+//
+//		labelBinary = cv::imread(labelsPath.at(i));
+//		cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
+//		//std::cout << "lableInt " << labelBinary.size() << std::endl << labelBinary << std::endl;
+//
+//		cv::threshold(labelBinary, lableInt, 0, i + 1, CV_THRESH_BINARY);
+//		//std::cout << labelsPath.at(i) << "  :  " << i << std::endl << lableInt << std::endl;
+//		outPut = outPut + lableInt;
+//		//std::cout << "outPut size " << outPut.size() << std::endl;
+//		//std::cout << " ------- " << i << " ------- " <<std::endl;
+//		//std::cout << (int)outPut.at<uchar>(100, 803) << std::endl;
+//		//std::cout << (int)outPut.at<uchar>(6473, 1361) << std::endl;
+//		//std::cout << (int)outPut.at<uchar>(21, 152) << std::endl;
+//		//std::cout << (int)outPut.at<uchar>(6257, 737) << std::endl;
+//		//std::cout << (int)outPut.at<uchar>(95, 777) << std::endl;
+//		//std::cout << " ------------------------ " << std::endl;
+//	}
+//	
+//	return outPut;
+//}
 
 void predictOnInput(cv::Mat image, Classifier& classifier) {
 	
@@ -417,59 +416,59 @@ void predictOnInput(cv::Mat image, Classifier& classifier) {
 //
 //}
 
-cv::Mat showInPseudoColorFirst5Classes(cv::Mat labeledImage) {
-
-	cv::Mat input_3channels;
-	cv::cvtColor(labeledImage, input_3channels, CV_GRAY2RGB);
-
-	//std::cout << "Mat labeledImage type " << labeledImage.type() << std::endl;
-	//std::cout << "Mat input_3channels type " << input_3channels.type() << std::endl;
-
-	//std::cout << "Mat labeledImage  :" << std::endl<< labeledImage << std::endl;
-	//std::cout << "Mat input_3channels:  " << std::endl << input_3channels << std::endl;
-
-	cv::Scalar color;
-	for (int i = 0; i < labeledImage.rows; ++i)
-	{
-		for (int j = 0; j < labeledImage.cols; ++j)
-		{
-			if (labeledImage.at<uchar>(i, j) == 0) {
-				//Nothing 
-				color = cv::Scalar(0, 0, 0);
-			}
-			if (labeledImage.at<uchar>(i, j) == 1) {
-				//city == red
-				color = cv::Scalar(0, 0, 255);
-				
-			}
-			if (labeledImage.at<uchar>(i, j) == 2) {
-				//field == yellow
-				color = cv::Scalar(0, 255, 255);
-			
-			}
-			if (labeledImage.at<uchar>(i, j) == 3) {
-				//forest = dark green
-				color = cv::Scalar(15, 78, 5);
-				
-			}
-			if (labeledImage.at<uchar>(i, j) == 4) {
-				//grass =  green
-				color = cv::Scalar(0, 255, 0);
-			}
-			if (labeledImage.at<uchar>(i, j) == 5) {
-				//street =  blue
-				color = cv::Scalar(255, 0, 0);
-			}
-
-			input_3channels.at<cv::Vec3b>(i, j)[0] = color.val[0];
-			input_3channels.at<cv::Vec3b>(i, j)[1] = color.val[1];
-			input_3channels.at<cv::Vec3b>(i, j)[2] = color.val[2];
-		}
-	}
-
-	cv::Mat show = (input_3channels.clone());
-	return show;
-}
+//cv::Mat showInPseudoColorFirst5Classes(cv::Mat labeledImage) {
+//
+//	cv::Mat input_3channels;
+//	cv::cvtColor(labeledImage, input_3channels, CV_GRAY2RGB);
+//
+//	//std::cout << "Mat labeledImage type " << labeledImage.type() << std::endl;
+//	//std::cout << "Mat input_3channels type " << input_3channels.type() << std::endl;
+//
+//	//std::cout << "Mat labeledImage  :" << std::endl<< labeledImage << std::endl;
+//	//std::cout << "Mat input_3channels:  " << std::endl << input_3channels << std::endl;
+//
+//	cv::Scalar color;
+//	for (int i = 0; i < labeledImage.rows; ++i)
+//	{
+//		for (int j = 0; j < labeledImage.cols; ++j)
+//		{
+//			if (labeledImage.at<uchar>(i, j) == 0) {
+//				//Nothing 
+//				color = cv::Scalar(0, 0, 0);
+//			}
+//			if (labeledImage.at<uchar>(i, j) == 1) {
+//				//city == red
+//				color = cv::Scalar(0, 0, 255);
+//				
+//			}
+//			if (labeledImage.at<uchar>(i, j) == 2) {
+//				//field == yellow
+//				color = cv::Scalar(0, 255, 255);
+//			
+//			}
+//			if (labeledImage.at<uchar>(i, j) == 3) {
+//				//forest = dark green
+//				color = cv::Scalar(15, 78, 5);
+//				
+//			}
+//			if (labeledImage.at<uchar>(i, j) == 4) {
+//				//grass =  green
+//				color = cv::Scalar(0, 255, 0);
+//			}
+//			if (labeledImage.at<uchar>(i, j) == 5) {
+//				//street =  blue
+//				color = cv::Scalar(255, 0, 0);
+//			}
+//
+//			input_3channels.at<cv::Vec3b>(i, j)[0] = color.val[0];
+//			input_3channels.at<cv::Vec3b>(i, j)[1] = color.val[1];
+//			input_3channels.at<cv::Vec3b>(i, j)[2] = color.val[2];
+//		}
+//	}
+//
+//	cv::Mat show = (input_3channels.clone());
+//	return show;
+//}
 
 
 //const int cropFactorTest = 8;

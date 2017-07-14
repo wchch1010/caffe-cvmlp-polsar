@@ -1,5 +1,4 @@
 #include "config.h"
-#ifdef TRAIN_OBERPFAFFEN
 
 #include <caffe/caffe.hpp>
 #ifdef USE_OPENCV
@@ -13,7 +12,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "caffe/PolsarDataTools.hpp"
+#include "caffe/util/image_cropping_utils.hpp"
 
 #ifdef USE_OPENCV
 using namespace caffe;  // NOLINT(build/namespaces)
@@ -78,4 +77,3 @@ int main(int argc, char** argv) {
 	LOG(FATAL) << "This example requires OpenCV; compile with USE_OPENCV.";
 }
 #endif  // USE_OPENCV
-#endif 
