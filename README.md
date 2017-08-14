@@ -1,4 +1,4 @@
-# caffe-cvmlp-polsar Caffe complex valued neural network for classification of PolSAR images
+# Under DEV :  caffe-cvmlp-polsar Caffe complex valued neural network for classification of PolSAR images
 
 **This is a modified version of [Caffe](https://github.com/BVLC/caffe) used to achive goals set for master thesis work <!--[architecture](link)** -->
 
