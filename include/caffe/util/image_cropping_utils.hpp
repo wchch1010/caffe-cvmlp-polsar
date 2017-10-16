@@ -11,8 +11,6 @@
 
 namespace caffe{
 
-	//template<typename T>std::vector<T> splitCustomString(const T & str, const T & delimiters);
-	
 	template<typename T>
 	inline std::vector<T> splitCustomString(const T & str, const T & delimiters) {
 		std::vector<T> v;
@@ -103,6 +101,91 @@ namespace caffe{
 		return entry;
 	}
 
+
+
+	inline cv::Mat getComplexImageByIndex(std::vector<cv::Mat> inputVector, int row, int column, int radius) {
+
+		int indexColumnCopyFrom;
+		int indexRowCopyFrom;
+		int indexColumn;
+		int indexRow;
+		int countWl;
+		int countHl;
+		int countWr;
+		int countHr;
+
+		//cv::Mat entry = cv::Mat::zeros(2 * radius + 1, 2 * radius + 1, image.type());
+
+		if ((column - radius) < 0) {
+			indexColumnCopyFrom = 0;
+			indexColumn = radius - column;
+			countWl = column;
+		}
+		else {
+			indexColumnCopyFrom = column - radius;
+			indexColumn = 0;
+			countWl = radius;
+		}
+
+		if ((row - radius) < 0) {
+			indexRowCopyFrom = 0;
+			indexRow = radius - row;
+			countHl = row;
+		}
+		else {
+			indexRowCopyFrom = row - radius;
+			indexRow = 0;
+			countHl = radius;
+		}
+
+		if ((column + radius) >= inputVector.at(0).cols)
+		{
+			countWr = (inputVector.at(0).cols - 1) - column;
+		}
+		else {
+			countWr = radius;
+		}
+
+		if ((row + radius) >= inputVector.at(0).rows)
+		{
+			countHr = inputVector.at(0).rows - 1 - row;
+		}
+		else {
+			countHr = radius;
+		}
+
+		//cv::Mat tmp = image(cv::Rect(indexColumnCopyFrom, indexRowCopyFrom, countWl + countWr + 1, countHr + countHl + 1));
+
+		cv::Mat tmp1 = inputVector.at(0)(cv::Rect(indexColumnCopyFrom, indexRowCopyFrom, countWl + countWr + 1, countHr + countHl + 1));
+		cv::Mat tmp2 = inputVector.at(1)(cv::Rect(indexColumnCopyFrom, indexRowCopyFrom, countWl + countWr + 1, countHr + countHl + 1));
+		cv::Mat tmp3 = inputVector.at(2)(cv::Rect(indexColumnCopyFrom, indexRowCopyFrom, countWl + countWr + 1, countHr + countHl + 1));
+
+
+		cv::Mat rgbImage(tmp3.rows, tmp3.cols, CV_32FC3, cv::Scalar(0, 0, 0));
+
+		for (int row = 0; row < inputVector.at(0).rows; row++) {
+			for (int col = 0; col < inputVector.at(0).cols; col++) {
+
+				cv::Vec2f pxValue = tmp1.at<cv::Vec2f>(row, col);
+				float magnitudeB = std::sqrt((pxValue[0] * pxValue[0]) + (pxValue[1] * pxValue[1]));
+
+				pxValue = tmp2.at<cv::Vec2f>(row, col);
+				float magnitudeG = std::sqrt((pxValue[0] * pxValue[0]) + (pxValue[1] * pxValue[1]));
+
+				pxValue = tmp3.at<cv::Vec2f>(row, col);
+				float magnitudeR = std::sqrt((pxValue[0] * pxValue[0]) + (pxValue[1] * pxValue[1]));
+
+				rgbImage.at<cv::Vec3f>(row, col)[0] = magnitudeB;
+				rgbImage.at<cv::Vec3f>(row, col)[1] = magnitudeG;
+				rgbImage.at<cv::Vec3f>(row, col)[2] = magnitudeR;
+			}
+		}
+
+		return rgbImage;
+	}
+
+
+
 	inline std::vector<std::string> getLabelsPathes(std::string path) {
 		std::vector<std::string> labelsPath;
 		std::ifstream infile(path);
@@ -157,11 +240,14 @@ namespace caffe{
 	}
 	inline cv::Mat getMainImage(std::string pathToRatFile) {
 		std::vector<cv::Mat> inputVector;
+	
 		//amplitudes of the complex components of the sample covariance matrix C :
 
 		loadRATOberpfaffenhofen(pathToRatFile, inputVector);
 
 		cv::Mat rgbImage(inputVector.at(0).rows, inputVector.at(0).cols, CV_32FC3, cv::Scalar(0, 0, 0));
+		cv::Mat resultMat(inputVector.at(0).rows, inputVector.at(0).cols, CV_32FC(6));
+
 
 		//cv::Vec2f(realVal, imagVal)
 		for (int row = 0; row < inputVector.at(0).rows; row++) {

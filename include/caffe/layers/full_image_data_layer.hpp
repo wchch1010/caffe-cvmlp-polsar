@@ -45,6 +45,7 @@ class FullImageDataLayer : public BasePrefetchingDataLayer<Dtype> {
 
   int lines_id_;
   cv::Mat m_fullImage;
+  std::vector<cv::Mat> complexFullImageData;
   int numOfPoints;
 
 private:

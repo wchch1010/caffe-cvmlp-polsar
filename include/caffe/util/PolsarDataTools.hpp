@@ -142,6 +142,7 @@ static void loadRATOberpfaffenhofen(std::string fname, std::vector<cv::Mat>& dat
 	delete[](swap);
 }
 
+
 static void loadRAT(std::string fname, std::vector<cv::Mat>& data) {
 
 	bool verbose = true;

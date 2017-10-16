@@ -24,9 +24,9 @@ FullImageDataLayer<Dtype>::~FullImageDataLayer<Dtype>() {
   this->StopInternalThread();
 }
 //33
-const int IMAGE_RADIUS  = 13;
-const int NUM_OF_TRAIN_IMAGES  = 10000;
-const int NUM_OF_TEST_IMAGES   = 2000;
+const int IMAGE_RADIUS  = 1;
+const int NUM_OF_TRAIN_IMAGES  = 4;
+const int NUM_OF_TEST_IMAGES   = 4;
 
 template <typename Dtype>
 void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int height, string root_folder, vector<std::pair<std::string, int>>& lines) {
@@ -88,9 +88,6 @@ void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat 
 	total_none = labelBinary.rows*labelBinary.cols - (total_city + total_field + total_forest + total_grass + total_street);
 
 
-	//std::cout << root_folder << " labels : city = " << total_city << " / field = " << total_field << " / total_forest = " << total_forest << " / total_grass = " << total_grass << " / total_street " << total_street << " rest = " << total_none << std::endl;
-
-
 	if (total_city>numOfPoints) {
 		total_city = numOfPoints;
 	}
@@ -106,16 +103,13 @@ void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat 
 	if (total_street>numOfPoints) {
 		total_street = numOfPoints;
 	}
-	if (total_none>numOfPoints) {
-		total_none = numOfPoints;
-	}
 
 	/*for (int col = 0; col < image.cols; col++) {
 		for (int row = 0; row < image.rows; row++) {*/
 
    std::cout << root_folder << " labels : city = " << total_city << " / field = " << total_field << " / total_forest = " << total_forest << " / total_grass = " << total_grass << " / total_street " << total_street << " rest = " << total_none << std::endl;
 
-	while (city.size() < total_city || field.size() < total_field || forest.size() < total_forest || grass.size() < total_grass || street.size() < total_street || none.size() < total_none) {
+	while (city.size() < total_city || field.size() < total_field || forest.size() < total_forest || grass.size() < total_grass || street.size() < total_street) {
 
 
 		auto row = uniRows(rngRows);
@@ -171,20 +165,13 @@ void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat 
 				bInsert = true;
 			}
 			break;
-		case 0:
-			it = none.find(indexes);
-			if (none.size() < numOfPoints && it == none.end())
-			{
-				none.insert(std::pair<std::string, int>(indexes, label));
-				bInsert = true;
-			}
 		default:
 			break;
 		}
 
 		if (bInsert) {
 			//std::cout << "Inserted " << lines.size() << std::endl;
-			lines.push_back(std::make_pair(indexes, (int)labels.at<uchar>(row, col)));
+			lines.push_back(std::make_pair(indexes, (int)labels.at<uchar>(row, col)-1));
 
 			if (city.size() == total_city && !full_city) {
 				std::cout << root_folder << " City enteries created " << total_none << std::endl;
@@ -205,10 +192,6 @@ void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat 
 			if (street.size() == total_street && !full_street) {
 				std::cout << root_folder << " Street enteries created " << total_none << std::endl;
 				full_street = true;
-			}
-			if (none.size() == total_none && !full_none) {
-				std::cout << root_folder << " Empty enteries created " << total_none << std::endl;
-				full_none = true;
 			}
 		}
 		else {
@@ -305,6 +288,10 @@ void FullImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& botto
   std::string indexes = lines_[lines_id_].first;
   vector<string> strIndexes = splitCustomString<string>(indexes, ",");
   cv::Mat cv_img = getImageByIndex(m_fullImage, std::stoi(strIndexes.at(0)), std::stoi(strIndexes.at(1)), IMAGE_RADIUS);
+
+
+
+
  /* cv::namedWindow("entry" + std::to_string(lines_[lines_id_].first) + std::to_string(lines_[lines_id_].second), cv::WINDOW_NORMAL);
   cv::imshow("entry" + std::to_string(lines_[lines_id_].first) + std::to_string(lines_[lines_id_].second), cv_img);
   cv::waitKey(10);
@@ -361,16 +348,7 @@ void FullImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 
   // Reshape according to the first image of each batch
   // on single input batches allows for inputs of varying dimension.
- /* cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-      new_height, new_width, is_color);
-*/
   const string& source = image_data_param.source();
-
- /* if (this->phase_ == TRAIN) {
-	  std::cout << std::endl << std::endl << " -----       TRAIN    -----        " << " line id " << lines_id_ << " from " << lines_.size() <<  std::endl << std::endl << std::endl;
-  }else{
-	  std::cout << std::endl << std::endl << " -----       TEST     -----        " << " line id " << lines_id_ << " from " << lines_.size() << std::endl << std::endl << std::endl;
-  }*/
 
   if (m_fullImage.empty()) {
 
@@ -386,10 +364,6 @@ void FullImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   vector<string> strIndexes = splitCustomString<string>(indexes, ",");
 
   cv::Mat cv_img = getImageByIndex(m_fullImage, std::stoi(strIndexes.at(0)), std::stoi(strIndexes.at(1)), IMAGE_RADIUS);
- /* cv::namedWindow("entry" + std::to_string(lines_[lines_id_].first) + std::to_string(lines_[lines_id_].second), cv::WINDOW_NORMAL);
-  cv::imshow("entry" + std::to_string(lines_[lines_id_].first) + std::to_string(lines_[lines_id_].second), cv_img);
-  cv::waitKey();*/
-
 
   CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
   // Use data_transformer to infer the expected blob shape from a cv_img.
@@ -425,7 +399,6 @@ void FullImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     trans_time += timer.MicroSeconds();
 
 	prefetch_label[item_id] = lines_[lines_id_].second;//lines_[lines_id_].second;
-	
 
 	//std::cout << "prefetch_label[item_id]   " << prefetch_label[item_id]<<std::endl;
 	//cv::namedWindow(indexes+"-"+std::to_string(prefetch_label[item_id]), cv::WINDOW_NORMAL);
@@ -433,9 +406,8 @@ void FullImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 	//cv::waitKey();
 	//cv::destroyAllWindows();
 
-	vector<std::string> splitedPathToSource = splitCustomString<std::string>(source, "/");
-
-    cv::imwrite("C:/Data/db/" + splitedPathToSource.at(splitedPathToSource.size() - 2) + "/" + std::to_string(lines_[lines_id_].second) + "_label_" + indexes + "_" + splitedPathToSource.at(splitedPathToSource.size() - 2) + ".png", cv_img);
+	//vector<std::string> splitedPathToSource = splitCustomString<std::string>(source, "/");
+    //cv::imwrite("C:/Data/db/" + splitedPathToSource.at(splitedPathToSource.size() - 2) + "/" + std::to_string(lines_[lines_id_].second) + "_label_" + indexes + "_" + splitedPathToSource.at(splitedPathToSource.size() - 2) + ".png", cv_img);
 
 	 
     // go to the next iter
