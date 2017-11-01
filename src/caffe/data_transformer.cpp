@@ -241,7 +241,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   CHECK_LE(width, img_width);
   CHECK_GE(num, 1);
 
-  CHECK(cv_img.depth() == CV_8U) << "Image data type must be unsigned byte";
+  CHECK(cv_img.depth() == CV_8U || cv_img.depth() == CV_32F) << "Image data type must be uint8 or uint16";
+  bool is32bit = cv_img.depth() == CV_32F;
 
   const Dtype scale = param_.scale();
   const bool do_mirror = param_.mirror() && Rand(2);
@@ -297,6 +298,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   int top_index;
   for (int h = 0; h < height; ++h) {
     const uchar* ptr = cv_cropped_img.ptr<uchar>(h);
+	const uint32_t * ptr_32 = cv_cropped_img.ptr<uint32_t>(h);
+
     int img_index = 0;
     for (int w = 0; w < width; ++w) {
       for (int c = 0; c < img_channels; ++c) {
@@ -306,7 +309,12 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
           top_index = (c * height + h) * width + w;
         }
         // int top_index = (c * height + h) * width + w;
-        Dtype pixel = static_cast<Dtype>(ptr[img_index++]);
+		Dtype pixel;
+		if (is32bit)
+			pixel = static_cast<Dtype>(ptr_32[img_index++]);
+		else
+			pixel = static_cast<Dtype>(ptr[img_index++]);
+		
         if (has_mean_file) {
           int mean_index = (c * img_height + h_off + h) * img_width + w_off + w;
           transformed_data[top_index] =

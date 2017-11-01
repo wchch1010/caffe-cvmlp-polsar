@@ -24,14 +24,12 @@ FullImageDataLayer<Dtype>::~FullImageDataLayer<Dtype>() {
   this->StopInternalThread();
 }
 //33
-const int IMAGE_RADIUS  = 1;
-const int NUM_OF_TRAIN_IMAGES  = 4;
-const int NUM_OF_TEST_IMAGES   = 4;
+const int IMAGE_RADIUS  = 7;
+const int NUM_OF_TRAIN_IMAGES  = 100;
+const int NUM_OF_TEST_IMAGES   = 100;
 
 template <typename Dtype>
 void FullImageDataLayer<Dtype>::getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int height, string root_folder, vector<std::pair<std::string, int>>& lines) {
-
-
 	std::random_device rdRows;     // only used once to initialise (seed) engine
 	std::mt19937 rngRows(rdRows());    // random-number engine used (Mersenne-Twister in this case)
 	std::uniform_int_distribution<int> uniRows(0, image.rows-1); // guaranteed unbiased

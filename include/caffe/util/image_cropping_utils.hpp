@@ -81,11 +81,34 @@ namespace caffe{
 
 		cv::Mat tmp = image(cv::Rect(indexColumnCopyFrom, indexRowCopyFrom, countWl + countWr + 1, countHr + countHl + 1));
 
+		//std::cout << "tmp.type()" << tmp.type() <<"  image.type() "<< image.type()<< std::endl;
+
 		for (int i = indexColumn, i2 = 0; i2 < tmp.cols; i++, i2++) {
 			for (int j = indexRow, j2 = 0; j2 < tmp.rows; j++, j2++) {
-				entry.at<cv::Vec3b>(j, i)[0] = tmp.at<cv::Vec3b>(j2, i2)[0];
-				entry.at<cv::Vec3b>(j, i)[1] = tmp.at<cv::Vec3b>(j2, i2)[1];
-				entry.at<cv::Vec3b>(j, i)[2] = tmp.at<cv::Vec3b>(j2, i2)[2];
+
+				if (image.type() == CV_8UC3)
+				{
+					entry.at<cv::Vec3b>(j, i)[0] = tmp.at<cv::Vec3b>(j2, i2)[0];
+					entry.at<cv::Vec3b>(j, i)[1] = tmp.at<cv::Vec3b>(j2, i2)[1];
+					entry.at<cv::Vec3b>(j, i)[2] = tmp.at<cv::Vec3b>(j2, i2)[2];
+				}
+
+				if (image.type() == CV_32FC3)
+				{
+					entry.at<cv::Vec3f>(j, i)[0] = tmp.at<cv::Vec3f>(j2, i2)[0];
+					entry.at<cv::Vec3f>(j, i)[1] = tmp.at<cv::Vec3f>(j2, i2)[1];
+					entry.at<cv::Vec3f>(j, i)[2] = tmp.at<cv::Vec3f>(j2, i2)[2];
+				}
+
+				if (image.type() == CV_32FC(6))
+				{
+					entry.at<cv::Vec6f>(j, i)[0] = tmp.at<cv::Vec6f>(j2, i2)[0];
+					entry.at<cv::Vec6f>(j, i)[1] = tmp.at<cv::Vec6f>(j2, i2)[1];
+					entry.at<cv::Vec6f>(j, i)[2] = tmp.at<cv::Vec6f>(j2, i2)[2];
+					entry.at<cv::Vec6f>(j, i)[3] = tmp.at<cv::Vec6f>(j2, i2)[3];
+					entry.at<cv::Vec6f>(j, i)[4] = tmp.at<cv::Vec6f>(j2, i2)[4];
+					entry.at<cv::Vec6f>(j, i)[5] = tmp.at<cv::Vec6f>(j2, i2)[5];
+				}
 			}
 		}
 
@@ -246,8 +269,7 @@ namespace caffe{
 		loadRATOberpfaffenhofen(pathToRatFile, inputVector);
 
 		cv::Mat rgbImage(inputVector.at(0).rows, inputVector.at(0).cols, CV_32FC3, cv::Scalar(0, 0, 0));
-		cv::Mat resultMat(inputVector.at(0).rows, inputVector.at(0).cols, CV_32FC(6));
-
+	
 
 		//cv::Vec2f(realVal, imagVal)
 		for (int row = 0; row < inputVector.at(0).rows; row++) {
@@ -275,17 +297,24 @@ namespace caffe{
 	inline cv::Mat getLableMat(std::string path) {
 
 		std::vector<std::string> labelsPath = getLabelsPathes(path);
-
-		cv::Mat labelBinary;
 		cv::Mat lableInt;
 
-		cv::Mat outPut = cv::Mat::zeros(cv::imread(labelsPath.at(0)).size(), CV_8UC1);
+		cv::Mat labelBinary = cv::imread(labelsPath.at(0));
+		//TODO delet
+		labelBinary = labelBinary(cv::Rect(1000, 500, 5, 5));
+
+		cv::Mat outPut = cv::Mat::zeros(labelBinary.size(), CV_8UC1);
 
 		//std::cout <<"-------------------"<<std::endl<< " Creat label MAT: " << path<< std::endl << "-------------------" << std::endl;
 
 		for (int i = 0; i < labelsPath.size(); i++) {
 
 			labelBinary = cv::imread(labelsPath.at(i));
+
+			//TODO delet
+			labelBinary = labelBinary(cv::Rect(1000, 500, 5, 5));
+
+
 			cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
 			//std::cout << "lableInt " << labelBinary.size() << std::endl << labelBinary << std::endl;
 
@@ -317,9 +346,9 @@ namespace caffe{
 
 		cv::Mat colored = showInPseudoColorFirst5Classes(outPut);
 
-		/*cv::namedWindow("LabelsColored", cv::WINDOW_NORMAL);
+		cv::namedWindow("LabelsColored", cv::WINDOW_NORMAL);
 		cv::imshow("LabelsColored", colored);
-		cv::waitKey(10);*/
+		cv::waitKey(10);
 
 		return outPut;
 

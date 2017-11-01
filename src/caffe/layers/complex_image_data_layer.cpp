@@ -25,17 +25,108 @@ ComplexImageDataLayer<Dtype>::~ComplexImageDataLayer<Dtype>() {
 }
 //33
 const int IMAGE_RADIUS  = 7;
-const int NUM_OF_TRAIN_IMAGES  = 10;
-const int NUM_OF_TEST_IMAGES   = 10;
+const int NUM_OF_TRAIN_IMAGES  = 2000;
+const int NUM_OF_TEST_IMAGES   = 1000;
+
+//Simple test color image represtented by 3 complex numbers
+cv::Mat createTestImage(cv::Mat image) {
+
+	image.convertTo(image, CV_32FC3);
+
+	cv::Mat source = cv::Mat::zeros(image.rows, image.cols, CV_32FC(6));
+	//cv::Vec2f(realVal, imagVal)
+	for (int row = 0; row < image.rows; row++) {
+		for (int col = 0; col < image.cols; col++) {
+			source.at<cv::Vec6f>(row, col)[0] = image.at<cv::Vec3f>(row, col)[0];
+			source.at<cv::Vec6f>(row, col)[1] = 0;
+			source.at<cv::Vec6f>(row, col)[2] = image.at<cv::Vec3f>(row, col)[1];
+			source.at<cv::Vec6f>(row, col)[3] = 0;
+			source.at<cv::Vec6f>(row, col)[4] = image.at<cv::Vec3f>(row, col)[2];
+			source.at<cv::Vec6f>(row, col)[5] = 0;
+		}
+	}
+	return source;
+}
+
+void generateLinesAndLabels(int numOfPoints, cv::Mat image, int width, int height, string root_folder, vector<std::pair<std::string, int>>& lines) {
+
+	std::random_device rdRows;     // only used once to initialise (seed) engine
+	std::mt19937 rngRows(rdRows());    // random-number engine used (Mersenne-Twister in this case)
+	std::uniform_int_distribution<int> uniRows(0, image.rows - 1); // guaranteed unbiased
+	std::random_device rdCols;     // only used once to initialise (seed) engine
+	std::mt19937 rngCols(rdCols());    // random-number engine used (Mersenne-Twister in this case)
+	std::uniform_int_distribution<int> uniCols(0, image.cols - 1); // guaranteed unbiased
+	cv::Mat labels = getLableMat(root_folder + "/labels_list.txt");
+	std::vector<std::string> labelsPath = getLabelsPathes(root_folder + "/labels_list.txt");
 
 
-void getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int height, string root_folder, vector<std::pair<std::string, int>>& lines) {
+	int numOfClasses = labelsPath.size();
+	std::vector<std::map<std::string, int>> points(numOfClasses);
+	std::vector<int> totalPoints(numOfClasses);
+	std::vector<bool> fullPoints(numOfClasses);
+	std::vector<bool> maxPointsPerClass(numOfClasses);
+	std::map<std::string, int>::iterator it;
+	bool bInsert = false;
+	cv::Mat labelBinary;
 
+	int labeledPoints = 0;
+	int numOfAllointsTogether = 0;
+	for (int i = 0; i < labelsPath.size(); i++) {
+		labelBinary = cv::imread(labelsPath.at(i));
+		
+		//TODO delet
+		labelBinary = labelBinary(cv::Rect(1000, 500, 5, 5));
+
+		cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
+		labeledPoints = cv::countNonZero(labelBinary);
+		if (labeledPoints > numOfPoints) {
+			maxPointsPerClass.at(i) = numOfPoints;
+			numOfAllointsTogether += numOfPoints;
+		}
+		else {
+			maxPointsPerClass.at(i) = labeledPoints;
+			numOfAllointsTogether += labeledPoints;
+		}
+	}
+
+	int totalSum = 0;
+	double min, max;
+	cv::minMaxLoc(labels, &min, &max);
+	std::cout << "Labels mat " << min << " - " << max << std::endl;
+	while (totalSum < numOfAllointsTogether) {
+
+		auto row = uniRows(rngRows);
+		auto col = uniCols(rngCols);
+
+		std::string indexes = std::to_string(row) + "," + std::to_string(col);
+		int label = (int)labels.at<uchar>(row, col);
+
+	
+	
+		bInsert = false;
+
+		if (label < 1) {
+			continue;
+		}
+
+		//std::cout << "  " << row << "  :  " << col << " = "<< label<<std::endl;
+
+		it = points.at(label - 1).find(indexes);
+
+		//This pixel is firstly seen
+		if (it == points.at(label - 1).end()) {
+			points.at(label - 1).insert(std::pair<std::string, int>(indexes, label-1));
+			lines.push_back(std::make_pair(indexes, (int)labels.at<uchar>(row, col) - 1));
+			totalSum++;
+		}
+	}
+}
+
+void getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int height, string root_folder, vector<std::pair<std::string, int>>& lines){
 
 	std::random_device rdRows;     // only used once to initialise (seed) engine
 	std::mt19937 rngRows(rdRows());    // random-number engine used (Mersenne-Twister in this case)
 	std::uniform_int_distribution<int> uniRows(0, image.rows-1); // guaranteed unbiased
-
 	
 	std::random_device rdCols;     // only used once to initialise (seed) engine
 	std::mt19937 rngCols(rdCols());    // random-number engine used (Mersenne-Twister in this case)
@@ -48,13 +139,12 @@ void getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int heigh
 	std::map<std::string, int> street;
 	std::map<std::string, int> none;
 
-
-	int total_city;
-	int total_field;
 	int total_forest;
 	int total_grass;
 	int total_street;
 	int total_none;
+	int total_city;
+	int total_field;
 
 	std::map<std::string, int>::iterator it;
 	bool bInsert = false;
@@ -74,7 +164,7 @@ void getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int heigh
 	total_city = cv::countNonZero(labelBinary);
 	labelBinary = cv::imread(labelsPath.at(1));
 	cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
-	total_field = cv::countNonZero(labelBinary);
+	full_field = cv::countNonZero(labelBinary);
 	labelBinary = cv::imread(labelsPath.at(2));
 	cv::cvtColor(labelBinary, labelBinary, CV_BGR2GRAY, 1);
 	total_forest = cv::countNonZero(labelBinary);
@@ -204,15 +294,43 @@ void getImageLinesAndLabels(int numOfPoints, cv::Mat image, int width, int heigh
 	/*	}
 	}*/
 
-
-
-
 	std::cout << lines.size() << " Lines were created from original image " << std::endl;
 
 	//std::string indexes = lines_[lines_id_].first;
 	//vector<string> strIndexes = split<string>(indexes, ",");
 }
 
+
+void generateComplexMatFromRatFile(cv::Mat& m_fullImage, int numOfPoints, string root_folder, vector<std::pair<std::string, int>>& lines) {
+
+	//m_fullImage = getMainImage(source);
+
+	cv::Mat tmp1 = m_fullImage(cv::Rect(1000, 500, 5, 5));
+	//cv::imwrite("C:\\Data\\temp\\part.png", tmp1, );
+
+	cv::FileStorage fs("C:\\Data\\temp\\part25.xml", cv::FileStorage::WRITE);
+	fs << "mat" << tmp1;
+	fs.release();
+	//cv::Mat tmp2 = cv::imread("C:\\Data\\temp\\part.png", cv::IMREAD_ANYDEPTH);
+	cv::FileStorage fread;
+	fread.open("C:\\Data\\temp\\part25.xml", cv::FileStorage::READ);
+	//cv::Mat part;
+	fread["mat"] >> m_fullImage;
+
+	//std::cout << "Types :  " << tmp1.type() << " /  " << tmp2.type() << std::endl;
+	double min1, max1, min2, max2;
+	//cv::minMaxLoc(tmp1, &min1, &max1);
+	cv::minMaxLoc(m_fullImage, &min2, &max2);
+	//std::cout << "Min and Mas :  " << min1 << " /  " << max1 << std::endl;
+	std::cout << "Min and Mas :  " << min2 << " /  " << max2 << std::endl;
+
+	cv::namedWindow("test", cv::WINDOW_NORMAL);
+	cv::imshow("test", m_fullImage);
+	cv::waitKey(40);
+
+	generateLinesAndLabels(numOfPoints, m_fullImage, m_fullImage.cols, m_fullImage.rows, root_folder, lines);
+															 //
+}
 
 template <typename Dtype>
 void ComplexImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
@@ -229,26 +347,28 @@ void ComplexImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bo
   const string& source = this->layer_param_.image_data_param().source();
   LOG(INFO) << "Opening file " << source;
 
-
-  //C:/Data/magnitude_7_7/full_images/oph_lexi.rat
-  vector<string> strSplitSource = splitCustomString<string>(source, "/");
-
-  if (strSplitSource.at(strSplitSource.size() - 1) == "oph_lexi.rat") {
-	  m_fullImage = getMainImage(source);
-  }
-  else {
-	  m_fullImage = cv::imread(source, cv::IMREAD_ANYCOLOR);
-  }
-
-
   if (this->phase_ == TRAIN) {
 	  numOfPoints = NUM_OF_TRAIN_IMAGES;
   }
   else {
 	  numOfPoints = NUM_OF_TEST_IMAGES;
   }
+  //C:/Data/magnitude_7_7/full_images/oph_lexi.rat
+  vector<string> strSplitSource = splitCustomString<string>(source, "/");
 
-  getImageLinesAndLabels(numOfPoints, m_fullImage, m_fullImage.cols, m_fullImage.rows, root_folder, lines_);
+  if (strSplitSource.at(strSplitSource.size() - 1) == "image.png") {
+	  cv::Mat image = cv::imread(source, CV_LOAD_IMAGE_COLOR);
+	  m_fullImage = createTestImage(image);
+	  generateLinesAndLabels(numOfPoints, m_fullImage, m_fullImage.cols, m_fullImage.rows, root_folder, lines_);
+  }
+  else if (strSplitSource.at(strSplitSource.size() - 1) == "oph_lexi.rat") {	  
+	  generateComplexMatFromRatFile(m_fullImage, numOfPoints, root_folder, lines_);
+  }
+  else {
+	  m_fullImage = cv::imread(source, cv::IMREAD_ANYCOLOR);
+	  getImageLinesAndLabels(numOfPoints, m_fullImage, m_fullImage.cols, m_fullImage.rows, root_folder, lines_);
+  }
+
 
   LOG(INFO) << "File " << source<<" loaded";
 
@@ -299,6 +419,16 @@ void ComplexImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bo
   CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
   // Use data_transformer to infer the expected blob shape from a cv_image.
   vector<int> top_shape = this->data_transformer_->InferBlobShape(cv_img);
+
+  for (int i = 0; i < top_shape.size(); i++) {
+	  std::cout << top_shape.at(i) << " ";
+	  if (i % 5 == 0 && i != 0) {
+		  std::cout << std::endl;
+	  }
+  }
+  std::cout << std::endl;
+
+
   this->transformed_data_.Reshape(top_shape);
   // Reshape prefetch_data and top[0] according to the batch_size.
   const int batch_size = this->layer_param_.image_data_param().batch_size();
@@ -353,8 +483,14 @@ void ComplexImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
   if (m_fullImage.empty()) {
 
 	  vector<string> strSplitSource = splitCustomString<string>(source, "/");
-	  if (strSplitSource.at(strSplitSource.size() - 1) == "oph_lexi.rat") {
-		  m_fullImage = getMainImage(source);
+
+	  if (strSplitSource.at(strSplitSource.size() - 1) == "image.png") {
+		  cv::Mat image = cv::imread(source, CV_LOAD_IMAGE_COLOR);
+		  m_fullImage = createTestImage(image);
+	  }
+	  else if (strSplitSource.at(strSplitSource.size() - 1) == "oph_lexi.rat") {
+		  //m_fullImage = getMainImage(source);
+		  generateComplexMatFromRatFile(m_fullImage, numOfPoints, root_folder, lines_);
 	  }
 	  else {
 		  m_fullImage = cv::imread(source, cv::IMREAD_ANYCOLOR);
@@ -400,8 +536,7 @@ void ComplexImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 
 	vector<std::string> splitedPathToSource = splitCustomString<std::string>(source, "/");
 
-    cv::imwrite("C:/Data/db/" + splitedPathToSource.at(splitedPathToSource.size() - 2) + "/" + std::to_string(lines_[lines_id_].second) + "_label_" + indexes + "_" + splitedPathToSource.at(splitedPathToSource.size() - 2) + ".png", cv_img);
-
+    //cv::imwrite("C:/Data/db/" + splitedPathToSource.at(splitedPathToSource.size() - 2) + "/" + std::to_string(lines_[lines_id_].second) + "_label_" + indexes + "_" + splitedPathToSource.at(splitedPathToSource.size() - 2) + ".png", cv_img);
 	 
     // go to the next iter
     lines_id_++;
@@ -415,9 +550,9 @@ void ComplexImageDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     }
   }
   batch_timer.Stop();
-  DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
-  DLOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
-  DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
+  //DLOG(INFO) << "Prefetch batch: " << batch_timer.MilliSeconds() << " ms.";
+  //DLOG(INFO) << "     Read time: " << read_time / 1000 << " ms.";
+  //DLOG(INFO) << "Transform time: " << trans_time / 1000 << " ms.";
 }
 
 INSTANTIATE_CLASS(ComplexImageDataLayer);
